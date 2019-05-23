@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta charset="utf-8" />
+    <link href="Content/bootstrap.min.css" rel="stylesheet" />
+    <script src="Scripts/jquery-1.10.2.js"></script>
+    <script src="Scripts/bootstrap.js"></script>
+</head>
+<body style="padding-top:20px">
+    <div class="col-md-10 col-md-offset-1">
+        <div class="well">
+            <input type="button" class="btn btn-success" value="Load Employee" id="btnLoadEmp" />
+            <input type="button" class="btn btn-success pull-right" value="Log out" id="btnLogOut" />
+        </div>
+        <div class="well collapse" id="divEmp">
+            <table class="table table-bordered">
+                <thead>
+                    <tr class="success">
+                        <td>ID</td>
+                        <td>Name</td>
+                        <td>Designation</td>
+                        <td>Gender</td>
+                        <td>Salary</td>
+                        <td>Location</td>
+                    </tr>
+                </thead>
+                <tbody id="tbData"></tbody>
+            </table>
+        </div>
+        <div class="modal" data-keyboard="false" data-backdrop="static" id="divModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <a class="close" data-dismiss="modal">&times;</a>
+                        <h4 class="modal-title">Session Expired</h4>
+                    </div>
+                    <div class="modal-body">
+                        <h3>Please close the dialog to login again</h3>
+                    </div>
+                    <div class="modal-footer">
+                        <input type="button" class="btn btn-success" value="Close" data-dismiss="modal" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-danger collapse" id="divAlert">
+            <button class="close" id="btnAlertClose">&times;</button>
+            <div id="divAlertText"></div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            if (localStorage.getItem('accessToken') == null) {
+                window.location.href = 'Login.html';
+            }
+            $('#btnLoadEmp').click(function () {
+                //Empty table
+                $('#tbData').empty();
+
+                //redirection on modal close
+                $('#divModal').on('hidden.bs.modal', function () {
+                    window.location.href = 'Login.html';
+                });
+
+                //Log Out finction
+                $('#btnLogOut').click(function () {
+                    localStorage.removeItem('accessToken');
+                    window.location.href = 'Login.html';
+                });
+
+                //API call
+                $.ajax({
+                    method: 'GET',
+                    url: 'api/v2/employee',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                    },
+                    success: function (data) {
+                        $('#divEmp').show();
+                        $.each(data, function (index, value) {
+                            var row = '<tr><td>' + value.Id + '</td>'
+                            + '<td>' + value.Name + '</td>'
+                            + '<td>' + value.Designation + '</td>'
+                            + '<td>' + value.Gender + '</td>'
+                            + '<td>' + value.Salary + '</td>'
+                            + '<td>' + value.Location + '</td>';
+                            $('#tbData').append(row);
+                        });
+                    },
+                    error: function (jqXHR) {
+                        if (jqXHR.status == 401) {
+                            $('#divModal').modal();
+                        }
+                        else {
+                            $('#divAlertText').text(jqXHR.responseText + ' token: ' + localStorage.getItem('accessToken'));
+                            $('#divAlert').show('fade');
+                        }
+                    }
+                });
+            });
+
+            //Close the alert
+            $('#btnAlertClose').click(function () {
+                $('#divAlert').hide('fade');
+            });
+        });
+    </script>
+</body>
+</html>
